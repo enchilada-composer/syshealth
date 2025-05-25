@@ -1,0 +1,12 @@
+# Logs
+*.log
+
+# System files
+.DS_Store
+
+# Local settings
+.env
+
+# Build output
+build/
+dist/
