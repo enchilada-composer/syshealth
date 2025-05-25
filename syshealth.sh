@@ -71,9 +71,42 @@ get_disk_usage() {
 
 # Function to get network stats
 get_network_stats() {
-    local rx=$(cat /sys/class/net/$(ip route get 8.8.8.8 | awk '{print $5}')/statistics/rx_bytes)
-    local tx=$(cat /sys/class/net/$(ip route get 8.8.8.8 | awk '{print $5}')/statistics/tx_bytes)
-    echo "$rx $tx"
+    # Get the default network interface
+    local interface=$(ip route | grep default | awk '{print $5}')
+    if [ -z "$interface" ]; then
+        echo "0 0"
+        return
+    fi
+    
+    local rx_path="/sys/class/net/$interface/statistics/rx_bytes"
+    local tx_path="/sys/class/net/$interface/statistics/tx_bytes"
+    
+    # Check if paths exist
+    if [ ! -f "$rx_path" ] || [ ! -f "$tx_path" ]; then
+        echo "0 0"
+        return
+    fi
+    
+    # Get current byte counts
+    local current_rx=$(cat "$rx_path")
+    local current_tx=$(cat "$tx_path")
+    
+    # Wait a bit to calculate speed
+    sleep 1
+    
+    # Get new byte counts
+    local new_rx=$(cat "$rx_path")
+    local new_tx=$(cat "$tx_path")
+    
+    # Calculate speed in bits per second (bps)
+    local rx_speed=$(( (new_rx - current_rx) * 8 ))
+    local tx_speed=$(( (new_tx - current_tx) * 8 ))
+    
+    # Convert to Mbps
+    local rx_mbps=$(echo "$rx_speed / 1000000" | bc)
+    local tx_mbps=$(echo "$tx_speed / 1000000" | bc)
+    
+    echo "$rx_mbps $tx_mbps"
 }
 
 # Function to get temperature
@@ -117,7 +150,8 @@ while true; do
         continue
     fi
     
-    clear
+    # Clear screen and move cursor to top
+    tput clear
     
     echo -e "${BLUE}System Health Monitor${NC}"
     echo "====================="
@@ -137,7 +171,7 @@ while true; do
     
     # Network Stats
     read rx tx < <(get_network_stats)
-    echo -e "Network: RX: ${YELLOW}$(echo "scale=2; $rx/1024/1024" | bc) MB${NC} TX: ${YELLOW}$(echo "scale=2; $tx/1024/1024" | bc) MB${NC}"
+    echo -e "Network: RX: ${YELLOW}${rx} Mbps${NC} TX: ${YELLOW}${tx} Mbps${NC}"
     
     # Temperature
     temp=$(get_temperature)
@@ -150,4 +184,18 @@ while true; do
     
     # Wait for next iteration
     sleep $INTERVAL
+    
+    # Move cursor up to overwrite previous output
+    tput cuu1
+    tput el
+    tput cuu1
+    tput el
+    tput cuu1
+    tput el
+    tput cuu1
+    tput el
+    tput cuu1
+    tput el
+    tput cuu1
+    tput el
 done
