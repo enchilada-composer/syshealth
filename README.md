@@ -47,4 +47,3 @@ Optional arguments:
 ## License
 
 MIT License
->>>>>>> b7b166e (Initial commit: System Health Monitor script with live output)
