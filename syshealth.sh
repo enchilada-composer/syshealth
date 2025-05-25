@@ -60,13 +60,13 @@ get_cpu_usage() {
 # Function to get memory usage
 get_memory_usage() {
     local mem=$(free | grep Mem | awk '{print ($3/$2) * 100}')
-    echo "$mem"
+    echo "$(printf "%.2f" $mem)"
 }
 
 # Function to get disk usage
 get_disk_usage() {
     local root=$(df / | grep / | awk '{print ($3/$2)*100}')
-    echo "$root"
+    echo "$(printf "%.2f" $root)"
 }
 
 # Function to get network stats
@@ -112,7 +112,7 @@ get_network_stats() {
 # Function to get temperature
 get_temperature() {
     if command -v sensors &> /dev/null; then
-        local temp=$(sensors | grep "Package id 0:" | awk '{print $4}' | sed 's/+//')
+        local temp=$(sensors | grep "Package id 0:" | awk '{print $4}' | sed 's/+//' | sed 's/°C//')
         echo "$temp"
     else
         echo "N/A"
@@ -121,7 +121,7 @@ get_temperature() {
 
 # Function to format percentage with color
 format_percentage() {
-    local value=$1
+    local value=$(printf "%.2f" $1)
     local color=$NC
     
     if (( $(echo "$value > 75" | bc -l) )); then
